@@ -25,8 +25,12 @@ def test_validate_message_trims_and_returns():
         (99999999, g.MAX_BUDGET_USD),
         (0, g.MIN_BUDGET_USD),
         (0.25, 0.25),
-        ("not a number", 10.0),
-        (None, 10.0),
+        ("10", 10.0),
+        ("$10", 10.0),
+        ("10,000", g.MAX_BUDGET_USD),
+        (" 7.50 ", 7.5),
+        ("not a number", None),
+        (None, None),
     ],
 )
 def test_clamp_budget(raw, expected):

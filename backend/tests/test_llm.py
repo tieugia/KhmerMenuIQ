@@ -98,6 +98,31 @@ def test_extract_intent_inconsistent_stated_true_but_null_budget_is_treated_as_u
 
 
 @patch("app.llm._chat_completion")
+def test_extract_intent_unparseable_budget_is_treated_as_unstated_not_fabricated(mock_completion):
+    # Regression test: a malformed budget_usd (e.g. the model emitting non-numeric text for a Riel
+    # amount it couldn't convert) must fall back to "no budget", never to a made-up dollar figure
+    # that gets echoed back to the diner as if they'd said it.
+    mock_completion.return_value = (
+        '{"budget_usd": "abc", "budget_stated": true, "wants": [], "notes": ""}'
+    )
+    intent = extract_intent("My budget is abc dollars")
+    assert intent["budget_usd"] is None
+    assert intent["budget_stated"] is False
+
+
+@patch("app.llm._chat_completion")
+def test_extract_intent_comma_formatted_budget_is_recovered_not_fabricated(mock_completion):
+    # Regression test for the ៛40,000 case: a comma-separated number string must still be parsed
+    # correctly rather than tripping the "unparseable" fallback and reporting a fake $10 budget.
+    mock_completion.return_value = (
+        '{"budget_usd": "9.76", "budget_stated": true, "wants": [], "notes": ""}'
+    )
+    intent = extract_intent("I have ៛40,000")
+    assert intent["budget_usd"] == 9.76
+    assert intent["budget_stated"] is True
+
+
+@patch("app.llm._chat_completion")
 def test_extract_intent_vague_order_request_gets_default_wants(mock_completion):
     # Regression test for: "tôi đi 4 người, nên ăn món gì?" — a vague, non-English recommendation
     # request that names no specific dish must NOT end up with an empty wants list.

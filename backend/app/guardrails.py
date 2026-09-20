@@ -42,11 +42,19 @@ def validate_message(message: str) -> str:
     return stripped
 
 
-def clamp_budget(value) -> float:
+def clamp_budget(value) -> float | None:
+    """Sanitize an LLM-extracted USD budget. Returns None when `value` isn't a usable number
+    (e.g. genuinely non-numeric text) rather than substituting a made-up figure — a fabricated
+    default would otherwise get echoed back to the diner as their own stated budget."""
+    if isinstance(value, str):
+        value = value.strip().replace(",", "")
+        for symbol in ("$", "USD", "usd"):
+            value = value.replace(symbol, "")
+        value = value.strip()
     try:
         budget = float(value)
     except (TypeError, ValueError):
-        budget = 10.0
+        return None
     return round(max(MIN_BUDGET_USD, min(budget, MAX_BUDGET_USD)), 2)
 
 
