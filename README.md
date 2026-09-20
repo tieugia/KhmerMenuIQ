@@ -7,7 +7,8 @@ Bilingual (Khmer/English) menu explorer + budget ordering assistant, built from 
 Cambodian restaurant menus in `data 1/`.
 
 Answers questions like: *"I have a budget of $10. I want chicken, some vegetables, and a couple
-of beers. What should I order, and from where?"*
+of beers. What should I order, and from where?"* Budgets may be stated in USD, KHR, VND, PHP, or
+SGD.
 
 ## Stack
 
@@ -20,6 +21,14 @@ of beers. What should I order, and from where?"*
   hallucinated), then asks the LLM to phrase a friendly bilingual reply from those numbers.
 - **Frontend**: React + Vite (`frontend/`) — a "Browse Menus" tab (bilingual, grouped by category)
   and an "Ask KhmerMenuIQ" chat tab that renders recommendations as receipt-style combo cards.
+
+## Currency assumptions
+
+The LLM extracts only the amount as spoken and its currency code. Python converts that budget to
+USD using fixed reference rates: 1 USD = 4,100 KHR, 25,400 VND, 58.7 PHP, or 1.34 SGD. They are
+deliberately not live exchange rates, so non-USD figures are approximate. All menu/combo arithmetic
+continues in USD; the original-currency amounts returned by the chat API are derived from those
+computed USD values.
 
 ## Run locally
 

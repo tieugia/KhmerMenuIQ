@@ -71,6 +71,11 @@ class Combo(BaseModel):
     budget_usd: Optional[float] = None
     within_budget: bool
     missing_roles: list[str] = []
+    # Diner's original currency, if their budget wasn't stated in USD (e.g. "VND") — derived from
+    # budget_usd/total_usd via a fixed approximate rate, not independently trusted.
+    budget_currency: Optional[str] = None
+    budget_display_amount: Optional[float] = None
+    total_display_amount: Optional[float] = None
 
 
 class ChatResponse(BaseModel):

@@ -32,6 +32,9 @@ def test_lookup_with_no_menu_matches_short_circuits_without_calling_llm(
     mock_intent.return_value = {
         "intent_type": "lookup",
         "budget_usd": None,
+        "budget_amount": None,
+        "budget_currency": None,
+        "budget_display_amount": None,
         "budget_stated": False,
         "party_size": 1,
         "wants": [],
@@ -58,6 +61,9 @@ def test_off_topic_classification_skips_keyword_search_entirely(
     mock_intent.return_value = {
         "intent_type": "off_topic",
         "budget_usd": None,
+        "budget_amount": None,
+        "budget_currency": None,
+        "budget_display_amount": None,
         "budget_stated": False,
         "party_size": 1,
         "wants": [],
@@ -83,6 +89,9 @@ def test_budget_request_builds_combos_and_calls_compose_reply(mock_intent, mock_
     mock_intent.return_value = {
         "intent_type": "order",
         "budget_usd": 10.0,
+        "budget_amount": 254000.0,
+        "budget_currency": "VND",
+        "budget_display_amount": 254000.0,
         "budget_stated": True,
         "party_size": 1,
         "wants": [{"role": "beer", "quantity": 2}],
@@ -97,6 +106,13 @@ def test_budget_request_builds_combos_and_calls_compose_reply(mock_intent, mock_
     body = resp.json()
     assert body["reply"] == "Here's a great combo."
     mock_compose.assert_called_once()
+    assert body["intent"]["budget_currency"] == "VND"
+    assert body["combos"]
+    assert body["combos"][0]["budget_currency"] == "VND"
+    assert body["combos"][0]["budget_display_amount"] == 254000.0
+    assert body["combos"][0]["total_display_amount"] == round(
+        body["combos"][0]["total_usd"] * 25400, 2
+    )
 
 
 @patch("app.llm._chat_completion")
@@ -108,7 +124,7 @@ def test_vague_non_english_group_recommendation_is_not_refused(mock_completion):
     # build_combos run for real against the actual menu dataset.
     mock_completion.side_effect = [
         (
-            '{"intent_type": "order", "budget_usd": null, "budget_stated": false, '
+            '{"intent_type": "order", "budget_amount": null, "budget_currency": null, "budget_stated": false, '
             '"party_size": 4, "wants": [], "notes": ""}'
         ),
         "Here's a balanced combo for your group of 4!",
