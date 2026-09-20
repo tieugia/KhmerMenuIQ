@@ -4,7 +4,7 @@ import RestaurantList from './components/RestaurantList'
 import ChatPanel from './components/ChatPanel'
 
 export default function App() {
-  const [tab, setTab] = useState('chat')
+  const [tab, setTab] = useState('menus')
   const [selectedMenuItem, setSelectedMenuItem] = useState(null)
   const [chatDraft, setChatDraft] = useState('')
   const [restaurants, setRestaurants] = useState([])
@@ -49,11 +49,11 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        <button className={`tab-btn ${tab === 'chat' ? 'active' : ''}`} onClick={() => setTab('chat')}>
-          Ask KhmerMenuIQ
-        </button>
         <button className={`tab-btn ${tab === 'menus' ? 'active' : ''}`} onClick={() => setTab('menus')}>
           Browse Menus
+        </button>
+        <button className={`tab-btn ${tab === 'chat' ? 'active' : ''}`} onClick={() => setTab('chat')}>
+          Ask KhmerMenuIQ
         </button>
       </nav>
 
