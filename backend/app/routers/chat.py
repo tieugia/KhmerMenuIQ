@@ -36,6 +36,7 @@ def _resolve_selected_item(restaurants, selected_item) -> dict | None:
             same_kh = selected_item.item_name_kh and item.name_kh == selected_item.item_name_kh
             if same_en or same_kh:
                 return {
+                    "restaurant_id": restaurant.id,
                     "restaurant": restaurant.restaurant_name_en or restaurant.id,
                     "restaurant_kh": restaurant.restaurant_name_kh,
                     "item_en": item.name_en,
@@ -44,6 +45,87 @@ def _resolve_selected_item(restaurants, selected_item) -> dict | None:
                     "price_usd": item.min_price_usd,
                 }
     return None
+
+
+def _selected_item_context(restaurants, selected_hit: dict, limit: int = 12) -> list[dict]:
+    """Build deterministic comparison context around an exact selected menu item.
+
+    Same-category items are the strongest comparison. Items from the same restaurant are
+    preferred, and a few other dishes there are included when the category has too few peers.
+    Python computes every price relationship so the LLM only has to explain it.
+    """
+    selected_price = selected_hit.get("price_usd")
+    candidates: list[tuple] = []
+
+    for restaurant in restaurants:
+        for item in restaurant.items:
+            is_selected = (
+                restaurant.id == selected_hit["restaurant_id"]
+                and item.name_en == selected_hit["item_en"]
+                and item.name_kh == selected_hit["item_kh"]
+            )
+            if is_selected or item.min_price_usd is None:
+                continue
+
+            same_restaurant = restaurant.id == selected_hit["restaurant_id"]
+            same_category = item.category == selected_hit["category"]
+            if not same_restaurant and not same_category:
+                continue
+
+            if same_restaurant and same_category:
+                priority = 0
+                comparison_scope = "same category at the same restaurant"
+            elif same_category:
+                priority = 1
+                comparison_scope = "same category at another restaurant"
+            else:
+                priority = 2
+                comparison_scope = "another item at the same restaurant"
+
+            if selected_price is None:
+                price_relation = "unknown"
+                difference = None
+                distance = float("inf")
+            else:
+                signed_difference = round(item.min_price_usd - selected_price, 2)
+                distance = abs(signed_difference)
+                difference = distance
+                price_relation = (
+                    "same price"
+                    if signed_difference == 0
+                    else "more expensive"
+                    if signed_difference > 0
+                    else "cheaper"
+                )
+
+            candidates.append(
+                (
+                    priority,
+                    distance,
+                    item.min_price_usd,
+                    {
+                        "restaurant_id": restaurant.id,
+                        "restaurant": restaurant.restaurant_name_en or restaurant.id,
+                        "restaurant_kh": restaurant.restaurant_name_kh,
+                        "item_en": item.name_en,
+                        "item_kh": item.name_kh,
+                        "category": item.category,
+                        "price_usd": item.min_price_usd,
+                        "comparison_scope": comparison_scope,
+                        "price_vs_selected": price_relation,
+                        "price_difference_usd": difference,
+                    },
+                )
+            )
+
+    candidates.sort(key=lambda candidate: candidate[:3])
+    selected = {
+        **selected_hit,
+        "comparison_scope": "selected item",
+        "price_vs_selected": "selected item",
+        "price_difference_usd": 0.0 if selected_price is not None else None,
+    }
+    return [selected, *(candidate[3] for candidate in candidates[: limit - 1])]
 
 
 @router.post("", response_model=ChatResponse)
@@ -66,7 +148,11 @@ def chat(req: ChatRequest):
         # entirely rather than relying on (English/Khmer-only) keyword matching to detect scope.
         return ChatResponse(reply=OUT_OF_SCOPE_REPLY, combos=[], intent=intent)
 
-    hits = [selected_hit] if selected_hit else keyword_search(restaurants, req.message)
+    hits = (
+        _selected_item_context(restaurants, selected_hit)
+        if selected_hit
+        else keyword_search(restaurants, req.message)
+    )
     if not hits:
         # A "lookup" question, but nothing in the menu data matches it.
         return ChatResponse(reply=OUT_OF_SCOPE_REPLY, combos=[], intent=intent)

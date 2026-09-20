@@ -59,8 +59,26 @@ def test_selected_menu_item_supplies_verified_context_for_pronoun_question(
     mock_intent, mock_search, mock_answer
 ):
     restaurants = client.get("/api/restaurants").json()
-    restaurant = next(r for r in restaurants if r["items"])
-    item = restaurant["items"][0]
+    category_counts = {}
+    for candidate_restaurant in restaurants:
+        for candidate_item in candidate_restaurant["items"]:
+            if candidate_item["min_price_usd"] is None:
+                continue
+            category = candidate_item["category"]
+            category_counts[category] = category_counts.get(category, 0) + 1
+    restaurant = next(
+        r
+        for r in restaurants
+        if any(
+            item["min_price_usd"] is not None and category_counts[item["category"]] >= 3
+            for item in r["items"]
+        )
+    )
+    item = next(
+        item
+        for item in restaurant["items"]
+        if item["min_price_usd"] is not None and category_counts[item["category"]] >= 3
+    )
     mock_intent.return_value = {
         # A short pronoun-only question can be misclassified without the UI selection context.
         # The verified selected item must still keep it in menu-question scope.
@@ -95,7 +113,14 @@ def test_selected_menu_item_supplies_verified_context_for_pronoun_question(
     mock_search.assert_not_called()
     _, call_hits = mock_answer.call_args.args
     verified = mock_answer.call_args.kwargs["selected_item"]
-    assert call_hits == [verified]
+    assert len(call_hits) >= 3
+    assert call_hits[0]["comparison_scope"] == "selected item"
+    assert call_hits[0]["item_en"] == verified["item_en"]
+    assert all(
+        hit["price_vs_selected"] in {"cheaper", "same price", "more expensive"}
+        for hit in call_hits[1:]
+    )
+    assert any(hit["category"] == item["category"] for hit in call_hits[1:])
     assert verified["restaurant"] == restaurant["restaurant_name_en"]
     assert verified["item_en"] == item["name_en"]
     assert verified["price_usd"] == item["min_price_usd"]
