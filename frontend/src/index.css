@@ -610,6 +610,109 @@ h1, h2, h3, .display {
   color: var(--red);
 }
 
+/* ---------- Selected-item comparison cards ---------- */
+
+.menu-suggestions {
+  margin-top: 12px;
+  max-width: 760px;
+}
+
+.menu-suggestions-title {
+  margin: 0 0 8px 2px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.menu-suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-suggestion-card {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 8px 24px -18px rgba(36, 28, 21, 0.5);
+}
+
+.menu-suggestion-card.selected-item {
+  border-color: var(--gold);
+  background: #fff8e9;
+}
+
+.menu-suggestion-topline,
+.menu-suggestion-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.menu-suggestion-category {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.comparison-badge {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.comparison-badge.selected-item {
+  background: #f6e6bd;
+  color: #805b0d;
+}
+
+.comparison-badge.cheaper {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.comparison-badge.more-expensive {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.menu-suggestion-card h3 {
+  margin: 9px 0 2px;
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.menu-suggestion-kh {
+  min-height: 1.25em;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.menu-suggestion-footer {
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--border);
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+}
+
+.menu-suggestion-footer strong {
+  color: var(--terracotta-dark);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 .empty-state, .loading-state, .error-state {
   color: var(--ink-soft);
   padding: 40px 0;
@@ -638,5 +741,8 @@ footer.app-footer {
     flex-direction: column;
     align-items: flex-end;
     gap: 6px;
+  }
+  .menu-suggestions-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -91,7 +91,21 @@ class Combo(BaseModel):
     total_display_amount: Optional[float] = None
 
 
+class MenuItemSuggestion(BaseModel):
+    restaurant_id: str
+    restaurant: str
+    restaurant_kh: Optional[str] = None
+    item_en: str
+    item_kh: str = ""
+    category: Category
+    price_usd: Optional[float] = None
+    comparison_scope: str
+    price_vs_selected: str
+    price_difference_usd: Optional[float] = None
+
+
 class ChatResponse(BaseModel):
     reply: str
     combos: list[Combo] = []
+    suggested_items: list[MenuItemSuggestion] = []
     intent: dict

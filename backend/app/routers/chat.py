@@ -137,7 +137,7 @@ def chat(req: ChatRequest):
     # "order" intent always has a non-empty wants list by this point (extract_intent fills in a
     # balanced default when the diner didn't name specific dishes), so this also covers vague,
     # non-English recommendation requests like "tôi đi 4 người, nên ăn món gì?".
-    if intent["wants"]:
+    if intent["wants"] and not selected_hit:
         combos = build_combos(restaurants, intent["budget_usd"], intent["wants"], top_n=3)
         _add_currency_display(combos, intent)
         reply = compose_reply(req.message, intent, combos)
@@ -158,4 +158,4 @@ def chat(req: ChatRequest):
         return ChatResponse(reply=OUT_OF_SCOPE_REPLY, combos=[], intent=intent)
 
     reply = answer_general_question(req.message, hits, selected_item=selected_hit)
-    return ChatResponse(reply=reply, combos=[], intent=intent)
+    return ChatResponse(reply=reply, combos=[], suggested_items=hits[:4] if selected_hit else [], intent=intent)

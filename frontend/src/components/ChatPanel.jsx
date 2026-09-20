@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { sendChatMessage } from '../api'
 import ComboCard from './ComboCard'
+import MenuItemCard from './MenuItemCard'
 
 const STARTERS = [
   "I have $10, want chicken, some vegetables, and a couple of beers — what should I order?",
@@ -14,6 +15,7 @@ export default function ChatPanel({ selectedItem, initialDraft, onClearSelectedI
       role: 'assistant',
       text: "Sok sabay! Tell me your budget and what you're craving, and I'll find the best combo across these 30 menus.",
       combos: [],
+      suggestedItems: [],
     },
   ])
   const [input, setInput] = useState(initialDraft || '')
@@ -29,11 +31,19 @@ export default function ChatPanel({ selectedItem, initialDraft, onClearSelectedI
     setBusy(true)
     try {
       const data = await sendChatMessage(trimmed, [], selectedItem)
-      setMessages((m) => [...m, { role: 'assistant', text: data.reply, combos: data.combos || [] }])
+      setMessages((m) => [
+        ...m,
+        {
+          role: 'assistant',
+          text: data.reply,
+          combos: data.combos || [],
+          suggestedItems: data.suggested_items || [],
+        },
+      ])
     } catch {
       setMessages((m) => [
         ...m,
-        { role: 'assistant', text: "Sorry, I couldn't reach the kitchen (server error). Please try again.", combos: [] },
+        { role: 'assistant', text: "Sorry, I couldn't reach the kitchen (server error). Please try again.", combos: [], suggestedItems: [] },
       ])
     } finally {
       setBusy(false)
@@ -79,6 +89,19 @@ export default function ChatPanel({ selectedItem, initialDraft, onClearSelectedI
             <div>
               <div className="bubble">{m.text}</div>
               {m.combos?.map((c) => <ComboCard combo={c} key={c.restaurant_id} />)}
+              {m.suggestedItems?.length > 0 && (
+                <section className="menu-suggestions" aria-label="Suggested menu items">
+                  <div className="menu-suggestions-title">Items to compare</div>
+                  <div className="menu-suggestions-grid">
+                    {m.suggestedItems.map((item) => (
+                      <MenuItemCard
+                        item={item}
+                        key={`${item.restaurant_id}-${item.item_en}-${item.item_kh}`}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         ))}

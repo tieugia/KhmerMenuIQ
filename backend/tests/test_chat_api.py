@@ -109,7 +109,12 @@ def test_selected_menu_item_supplies_verified_context_for_pronoun_question(
     )
 
     assert resp.status_code == 200
-    assert resp.json()["reply"] == "Answer about the selected dish."
+    body = resp.json()
+    assert body["reply"] == "Answer about the selected dish."
+    assert len(body["suggested_items"]) == 4
+    assert body["suggested_items"][0]["item_en"] == item["name_en"]
+    assert body["suggested_items"][0]["price_vs_selected"] == "selected item"
+    assert all(card["restaurant_id"] for card in body["suggested_items"])
     mock_search.assert_not_called()
     _, call_hits = mock_answer.call_args.args
     verified = mock_answer.call_args.kwargs["selected_item"]
