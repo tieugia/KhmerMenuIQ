@@ -1,5 +1,8 @@
 # KhmerMenuIQ
 
+**Live:** https://khmermenuiq.onrender.com (API: https://khmermenuiq-api.onrender.com) — hosted on
+Render's free tier, so the backend may take ~30-60s to wake up after a period of inactivity.
+
 Bilingual (Khmer/English) menu explorer + budget ordering assistant, built from 30 photographed
 Cambodian restaurant menus in `data 1/`.
 
@@ -51,3 +54,18 @@ otherwise cached results are reused.
 `backend/.env` (gitignored) holds `OPENROUTER_API_KEY`, plus `VISION_MODEL` / `CHAT_MODEL` (default
 `google/gemini-2.5-flash`) and `KHR_PER_USD` (fixed conversion rate used to normalize Riel prices
 to USD for budget math).
+
+## Deployment
+
+Two separate Render services, both auto-deploying from `main`:
+
+- **`khmermenuiq-api`** — Python web service. Build: `pip install -r backend/requirements.txt`.
+  Start: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Env vars:
+  `OPENROUTER_API_KEY`, `VISION_MODEL`, `CHAT_MODEL`, `KHR_PER_USD`, `FRONTEND_ORIGIN` (the static
+  site's URL, for CORS), `PYTHON_VERSION`.
+- **`khmermenuiq`** — static site. Build: `cd frontend && npm install && npm run build`. Publish
+  path: `frontend/dist`. Env var: `VITE_API_BASE_URL` (the API service's URL, baked in at build
+  time since Vite env vars are compile-time, not runtime).
+
+Backend tests: `backend\.venv\Scripts\python.exe -m pytest -v` (from `backend/`, config in
+`pytest.ini`).
