@@ -258,10 +258,20 @@ def _fallback_reply(combos: list[Combo], intent: dict | None = None) -> str:
     )
 
 
-def answer_general_question(message: str, search_hits: list[dict]) -> str:
-    payload = {"diner_message": message, "matching_menu_items": search_hits}
+def answer_general_question(
+    message: str,
+    search_hits: list[dict],
+    selected_item: dict | None = None,
+) -> str:
+    payload = {
+        "diner_message": message,
+        "selected_menu_item": selected_item,
+        "matching_menu_items": search_hits,
+    }
     system = (
         "You are KhmerMenuIQ, a bilingual assistant for Cambodian restaurant menus. "
+        "When selected_menu_item is present, the diner deliberately selected that exact item; "
+        "resolve words like 'this', 'it', or 'món này' to it and answer about that item first. "
         "Answer the diner's question using ONLY the matching_menu_items JSON provided as ground truth "
         "(restaurant names, dish names, prices) — matching_menu_items is already sorted with the most "
         "relevant matches first. If it's empty or insufficient, say you don't have that information in "

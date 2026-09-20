@@ -35,7 +35,7 @@ function formatPrice(item) {
   )
 }
 
-function RestaurantDetail({ restaurant, onBack }) {
+function RestaurantDetail({ restaurant, onBack, onAskAboutItem }) {
   const grouped = {}
   for (const item of restaurant.items) {
     grouped[item.category] = grouped[item.category] || []
@@ -55,12 +55,22 @@ function RestaurantDetail({ restaurant, onBack }) {
         <div className="category-group" key={cat}>
           <div className="category-label">{CATEGORY_LABELS[cat] || cat}</div>
           {grouped[cat].map((item, i) => (
-            <div className="menu-item-row" key={i}>
+            <div className="menu-item-row" key={`${item.name_en}-${item.name_kh}-${i}`}>
               <div className="names">
                 <div className="en">{item.name_en}</div>
                 <div className="kh khmer">{item.name_kh}</div>
               </div>
-              {formatPrice(item)}
+              <div className="menu-item-actions">
+                {formatPrice(item)}
+                <button
+                  className="ask-item-btn"
+                  type="button"
+                  onClick={() => onAskAboutItem(restaurant, item)}
+                  aria-label={`Ask KhmerMenuIQ about ${item.name_en || item.name_kh}`}
+                >
+                  Ask <span aria-hidden="true">→</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -69,7 +79,7 @@ function RestaurantDetail({ restaurant, onBack }) {
   )
 }
 
-export default function RestaurantList({ restaurants, loading, error }) {
+export default function RestaurantList({ restaurants, loading, error, onAskAboutItem }) {
   const [selectedId, setSelectedId] = useState(null)
 
   if (loading) return <div className="loading-state">Loading menus…</div>
@@ -79,7 +89,13 @@ export default function RestaurantList({ restaurants, loading, error }) {
   if (selectedId) {
     const restaurant = restaurants.find((r) => r.id === selectedId)
     if (restaurant) {
-      return <RestaurantDetail restaurant={restaurant} onBack={() => setSelectedId(null)} />
+      return (
+        <RestaurantDetail
+          restaurant={restaurant}
+          onBack={() => setSelectedId(null)}
+          onAskAboutItem={onAskAboutItem}
+        />
+      )
     }
   }
 

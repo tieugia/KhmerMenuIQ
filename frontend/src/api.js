@@ -6,11 +6,11 @@ export async function fetchRestaurants() {
   return res.json()
 }
 
-export async function sendChatMessage(message, history = []) {
+export async function sendChatMessage(message, history = [], selectedItem = null) {
   const res = await fetch(`${BASE}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({ message, history, selected_item: selectedItem }),
   })
   if (!res.ok) throw new Error('Chat request failed')
   return res.json()

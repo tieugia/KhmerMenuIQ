@@ -42,9 +42,22 @@ class Restaurant(BaseModel):
     items: list[MenuItem] = []
 
 
+class SelectedMenuItem(BaseModel):
+    """A menu reference supplied by the UI and verified against server-side menu data."""
+
+    restaurant_id: str
+    restaurant_name_en: Optional[str] = None
+    restaurant_name_kh: Optional[str] = None
+    item_name_en: str = ""
+    item_name_kh: str = ""
+    category: Category
+    price_usd: Optional[float] = None
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=MESSAGE_MIN_LENGTH, max_length=MESSAGE_MAX_LENGTH)
     history: list[dict] = []
+    selected_item: Optional[SelectedMenuItem] = None
 
     @field_validator("message")
     @classmethod

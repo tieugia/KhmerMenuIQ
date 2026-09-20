@@ -55,6 +55,55 @@ def test_lookup_with_no_menu_matches_short_circuits_without_calling_llm(
 @patch("app.routers.chat.answer_general_question")
 @patch("app.routers.chat.keyword_search")
 @patch("app.routers.chat.extract_intent")
+def test_selected_menu_item_supplies_verified_context_for_pronoun_question(
+    mock_intent, mock_search, mock_answer
+):
+    restaurants = client.get("/api/restaurants").json()
+    restaurant = next(r for r in restaurants if r["items"])
+    item = restaurant["items"][0]
+    mock_intent.return_value = {
+        # A short pronoun-only question can be misclassified without the UI selection context.
+        # The verified selected item must still keep it in menu-question scope.
+        "intent_type": "off_topic",
+        "budget_usd": None,
+        "budget_amount": None,
+        "budget_currency": None,
+        "budget_display_amount": None,
+        "budget_stated": False,
+        "party_size": 1,
+        "wants": [],
+        "wants_defaulted": False,
+        "notes": "",
+    }
+    mock_answer.return_value = "Answer about the selected dish."
+
+    selected_item = {
+        "restaurant_id": restaurant["id"],
+        "restaurant_name_en": "client-supplied name must not be trusted",
+        "item_name_en": item["name_en"],
+        "item_name_kh": item["name_kh"],
+        "category": item["category"],
+        "price_usd": 999999,
+    }
+    resp = client.post(
+        "/api/chat",
+        json={"message": "Is this item spicy?", "selected_item": selected_item},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["reply"] == "Answer about the selected dish."
+    mock_search.assert_not_called()
+    _, call_hits = mock_answer.call_args.args
+    verified = mock_answer.call_args.kwargs["selected_item"]
+    assert call_hits == [verified]
+    assert verified["restaurant"] == restaurant["restaurant_name_en"]
+    assert verified["item_en"] == item["name_en"]
+    assert verified["price_usd"] == item["min_price_usd"]
+
+
+@patch("app.routers.chat.answer_general_question")
+@patch("app.routers.chat.keyword_search")
+@patch("app.routers.chat.extract_intent")
 def test_off_topic_classification_skips_keyword_search_entirely(
     mock_intent, mock_search, mock_answer
 ):

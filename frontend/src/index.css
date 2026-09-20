@@ -264,6 +264,42 @@ h1, h2, h3, .display {
   font-style: italic;
 }
 
+.menu-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.ask-item-btn {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--terracotta-dark);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.ask-item-btn:hover {
+  border-color: var(--terracotta);
+  background: var(--red-bg);
+}
+
+.ask-item-btn:active {
+  transform: scale(0.96);
+}
+
+.ask-item-btn:focus-visible,
+.clear-selected-item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* ---------- Chat ---------- */
 
 .chat-shell {
@@ -330,6 +366,78 @@ h1, h2, h3, .display {
 .suggestion-chip:hover {
   border-color: var(--terracotta);
   color: var(--terracotta-dark);
+}
+
+.selected-item-context {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--gold) 65%, var(--border));
+  border-radius: 14px;
+  background: #fff8e9;
+  box-shadow: 0 8px 24px -18px rgba(36, 28, 21, 0.5);
+}
+
+.selected-item-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--terracotta);
+  color: #fff;
+  font-family: 'Noto Sans Khmer', sans-serif;
+  font-weight: 700;
+}
+
+.selected-item-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.selected-item-copy strong,
+.selected-item-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-item-copy strong {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 0.96rem;
+}
+
+.selected-item-copy span:last-child {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.selected-item-copy .selected-item-eyebrow {
+  color: var(--terracotta-dark);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clear-selected-item {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.clear-selected-item:hover {
+  color: var(--terracotta-dark);
+  background: rgba(193, 68, 14, 0.08);
 }
 
 .chat-input-row {
@@ -522,5 +630,13 @@ footer.app-footer {
   }
   .combo-header {
     flex-direction: column;
+  }
+  .menu-item-row {
+    align-items: center;
+  }
+  .menu-item-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
   }
 }

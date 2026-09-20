@@ -5,6 +5,8 @@ import ChatPanel from './components/ChatPanel'
 
 export default function App() {
   const [tab, setTab] = useState('chat')
+  const [selectedMenuItem, setSelectedMenuItem] = useState(null)
+  const [chatDraft, setChatDraft] = useState('')
   const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -15,6 +17,22 @@ export default function App() {
       .catch(() => setError('Could not load menu data. Is the backend running on :8000?'))
       .finally(() => setLoading(false))
   }, [])
+
+  function askAboutItem(restaurant, item) {
+    setSelectedMenuItem({
+      restaurant_id: restaurant.id,
+      restaurant_name_en: restaurant.restaurant_name_en,
+      restaurant_name_kh: restaurant.restaurant_name_kh,
+      item_name_en: item.name_en,
+      item_name_kh: item.name_kh,
+      category: item.category,
+      price_usd: item.min_price_usd,
+    })
+    setChatDraft(
+      `Tell me about "${item.name_en || item.name_kh}" at ${restaurant.restaurant_name_en}. Is it a good choice?`,
+    )
+    setTab('chat')
+  }
 
   return (
     <>
@@ -40,9 +58,21 @@ export default function App() {
       </nav>
 
       {tab === 'menus' ? (
-        <RestaurantList restaurants={restaurants} loading={loading} error={error} />
+        <RestaurantList
+          restaurants={restaurants}
+          loading={loading}
+          error={error}
+          onAskAboutItem={askAboutItem}
+        />
       ) : (
-        <ChatPanel />
+        <ChatPanel
+          selectedItem={selectedMenuItem}
+          initialDraft={chatDraft}
+          onClearSelectedItem={() => {
+            setSelectedMenuItem(null)
+            setChatDraft('')
+          }}
+        />
       )}
 
       <footer className="app-footer">

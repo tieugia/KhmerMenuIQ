@@ -8,7 +8,7 @@ const STARTERS = [
   'Where can I get grilled chicken feet?',
 ]
 
-export default function ChatPanel() {
+export default function ChatPanel({ selectedItem, initialDraft, onClearSelectedItem }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -16,9 +16,10 @@ export default function ChatPanel() {
       combos: [],
     },
   ])
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialDraft || '')
   const [busy, setBusy] = useState(false)
   const logRef = useRef(null)
+  const inputRef = useRef(null)
 
   async function submit(text) {
     const trimmed = text.trim()
@@ -27,7 +28,7 @@ export default function ChatPanel() {
     setInput('')
     setBusy(true)
     try {
-      const data = await sendChatMessage(trimmed)
+      const data = await sendChatMessage(trimmed, [], selectedItem)
       setMessages((m) => [...m, { role: 'assistant', text: data.reply, combos: data.combos || [] }])
     } catch {
       setMessages((m) => [
@@ -47,6 +48,28 @@ export default function ChatPanel() {
           {STARTERS.map((s) => (
             <button key={s} className="suggestion-chip" onClick={() => submit(s)}>{s}</button>
           ))}
+        </div>
+      )}
+
+      {selectedItem && (
+        <div className="selected-item-context" aria-label="Selected menu item">
+          <div className="selected-item-icon" aria-hidden="true">ម</div>
+          <div className="selected-item-copy">
+            <span className="selected-item-eyebrow">Asking about</span>
+            <strong>{selectedItem.item_name_en || selectedItem.item_name_kh}</strong>
+            <span>
+              {selectedItem.restaurant_name_en}
+              {selectedItem.price_usd != null ? ` · $${selectedItem.price_usd.toFixed(2)}` : ''}
+            </span>
+          </div>
+          <button
+            className="clear-selected-item"
+            type="button"
+            onClick={onClearSelectedItem}
+            aria-label="Clear selected menu item"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -71,10 +94,12 @@ export default function ChatPanel() {
 
       <div className="chat-input-row">
         <input
+          ref={inputRef}
+          autoFocus={Boolean(selectedItem)}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit(input)}
-          placeholder="e.g. I have $10, want chicken, veggies, and a couple beers…"
+          placeholder={selectedItem ? 'Ask anything about this item…' : 'e.g. I have $10, want chicken, veggies, and a couple beers…'}
           disabled={busy}
         />
         <button onClick={() => submit(input)} disabled={busy || !input.trim()}>Ask</button>

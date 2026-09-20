@@ -24,10 +24,33 @@ def _add_currency_display(combos: list[Combo], intent: dict) -> None:
             combo.budget_display_amount = round(from_usd(combo.budget_usd, currency), 2)
 
 
+def _resolve_selected_item(restaurants, selected_item) -> dict | None:
+    """Resolve client selection against menu data so names and prices cannot be fabricated."""
+    if selected_item is None:
+        return None
+    for restaurant in restaurants:
+        if restaurant.id != selected_item.restaurant_id:
+            continue
+        for item in restaurant.items:
+            same_en = selected_item.item_name_en and item.name_en == selected_item.item_name_en
+            same_kh = selected_item.item_name_kh and item.name_kh == selected_item.item_name_kh
+            if same_en or same_kh:
+                return {
+                    "restaurant": restaurant.restaurant_name_en or restaurant.id,
+                    "restaurant_kh": restaurant.restaurant_name_kh,
+                    "item_en": item.name_en,
+                    "item_kh": item.name_kh,
+                    "category": item.category,
+                    "price_usd": item.min_price_usd,
+                }
+    return None
+
+
 @router.post("", response_model=ChatResponse)
 def chat(req: ChatRequest):
     restaurants = load_restaurants()
     intent = extract_intent(req.message)
+    selected_hit = _resolve_selected_item(restaurants, req.selected_item)
 
     # "order" intent always has a non-empty wants list by this point (extract_intent fills in a
     # balanced default when the diner didn't name specific dishes), so this also covers vague,
@@ -38,15 +61,15 @@ def chat(req: ChatRequest):
         reply = compose_reply(req.message, intent, combos)
         return ChatResponse(reply=reply, combos=combos, intent=intent)
 
-    if intent["intent_type"] == "off_topic":
+    if intent["intent_type"] == "off_topic" and not selected_hit:
         # Classified as unrelated to Cambodian food/menus regardless of language — skip the LLM
         # entirely rather than relying on (English/Khmer-only) keyword matching to detect scope.
         return ChatResponse(reply=OUT_OF_SCOPE_REPLY, combos=[], intent=intent)
 
-    hits = keyword_search(restaurants, req.message)
+    hits = [selected_hit] if selected_hit else keyword_search(restaurants, req.message)
     if not hits:
         # A "lookup" question, but nothing in the menu data matches it.
         return ChatResponse(reply=OUT_OF_SCOPE_REPLY, combos=[], intent=intent)
 
-    reply = answer_general_question(req.message, hits)
+    reply = answer_general_question(req.message, hits, selected_item=selected_hit)
     return ChatResponse(reply=reply, combos=[], intent=intent)
