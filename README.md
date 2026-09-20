@@ -78,3 +78,7 @@ Two separate Render services, both auto-deploying from `main`:
 
 Backend tests: `backend\.venv\Scripts\python.exe -m pytest -v` (from `backend/`, config in
 `pytest.ini`).
+
+Agent evaluation: [30 diner scenarios and live eval instructions](backend/evals/README.md).
+From `backend/`, run `.venv/Scripts/python.exe -m evals.run --live` to evaluate the real model
+and save per-question results to `evals/results/latest.json` (requires API credits).

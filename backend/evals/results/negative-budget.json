@@ -1,0 +1,56 @@
+{
+  "model": "google/gemini-2.5-flash",
+  "started_at": "2026-09-20T08:30:20.511902+00:00",
+  "mode": "live",
+  "grading": "Deterministic structured checks; prose requires manual review",
+  "results": [
+    {
+      "id": "12",
+      "topic": "negative_budget",
+      "message": "Tôi có ngân sách -10 USD, gợi ý món gà.",
+      "expected": {
+        "intent_type": "order",
+        "budget_stated": false,
+        "budget_usd": null,
+        "budget_unparseable": true,
+        "budget_invalid": true,
+        "combos": "empty"
+      },
+      "passed": true,
+      "errors": [],
+      "status_code": 200,
+      "llm_calls": 1,
+      "seconds": 1.83,
+      "response": {
+        "reply": "Ngân sách không hợp lệ: budget không được là số âm. Vui lòng nhập lại ngân sách, ví dụ 10 USD hoặc 40.000 KHR. Invalid budget: a budget cannot be negative. Please enter your budget again.",
+        "combos": [],
+        "suggested_items": [],
+        "intent": {
+          "intent_type": "order",
+          "budget_amount": null,
+          "budget_currency": null,
+          "budget_stated": false,
+          "budget_unparseable": true,
+          "party_size": 1,
+          "wants": [
+            {
+              "role": "chicken",
+              "quantity": 1
+            }
+          ],
+          "notes": "",
+          "wants_defaulted": false,
+          "budget_invalid": true,
+          "budget_usd": null,
+          "budget_display_amount": null
+        }
+      },
+      "manual_review": "Ask for a valid positive budget; never silently replace -10 with 0.25."
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0
+  }
+}

@@ -1,3 +1,5 @@
+import string
+
 from .models import Combo, ComboLine, MenuItem, Restaurant
 
 ROLE_ALIASES = {
@@ -95,7 +97,8 @@ STOPWORDS = {
 
 
 def keyword_search(restaurants: list[Restaurant], query: str, limit: int = 25) -> list[dict]:
-    terms = [t for t in query.lower().split() if len(t) > 1 and t not in STOPWORDS]
+    words = [word.strip(string.punctuation + "។៕！？，。") for word in query.lower().split()]
+    terms = [word for word in words if len(word) > 1 and word not in STOPWORDS]
     if not terms:
         return []
 

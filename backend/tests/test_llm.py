@@ -19,13 +19,15 @@ def test_extract_intent_clamps_injected_huge_budget_and_quantity(mock_completion
 
 
 @patch("app.llm._chat_completion")
-def test_extract_intent_clamps_negative_budget(mock_completion):
+def test_extract_intent_rejects_negative_budget(mock_completion):
     mock_completion.return_value = (
         '{"budget_amount": -50, "budget_currency": "USD", "budget_stated": true, '
         '"wants": [], "notes": ""}'
     )
     intent = extract_intent("budget -50 dollars")
-    assert intent["budget_usd"] == g.MIN_BUDGET_USD
+    assert intent["budget_usd"] is None
+    assert intent["budget_invalid"] is True
+    assert intent["budget_stated"] is False
 
 
 @patch("app.llm._chat_completion")

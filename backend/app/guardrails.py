@@ -10,10 +10,14 @@ easy to audit and unit-test on their own:
 - a canned refusal used to short-circuit fully out-of-scope questions without calling the LLM
 """
 
+import math
+import re
+
+
 MESSAGE_MIN_LENGTH = 1
 MESSAGE_MAX_LENGTH = 500
 
-MIN_BUDGET_USD = 0.25
+MIN_BUDGET_USD = 0.0
 MAX_BUDGET_USD = 500.0
 MAX_QUANTITY_PER_ITEM = 10
 MAX_WANTS_PER_REQUEST = 6
@@ -55,7 +59,28 @@ def clamp_budget(value) -> float | None:
         budget = float(value)
     except (TypeError, ValueError):
         return None
+    if not math.isfinite(budget) or budget < 0:
+        return None
     return round(max(MIN_BUDGET_USD, min(budget, MAX_BUDGET_USD)), 2)
+
+
+def has_malformed_budget_literal(message: str) -> bool:
+    """Reject broken separators next to a currency, without treating dish counts as budgets.
+
+    Both 1,234,567.89 and 1.234.567,89 are accepted; 1.2.3 is not.
+    Single separators remain locale-dependent and are interpreted by the extractor.
+    """
+    currency = r"(?:USD|KHR|VND|PHP|SGD|dollars?|riel|pesos?|đồng|[$៛₫đ₱])"
+    number = r"[+\-−]?\d+(?:[.,]\d+)+"
+    pattern = rf"{currency}\s*({number})|({number})\s*{currency}"
+    for match in re.finditer(pattern, message, flags=re.IGNORECASE):
+        token = (match.group(1) or match.group(2)).lstrip("+-−")
+        if token.count('.') + token.count(',') < 2:
+            continue
+        if not (re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", token)
+                or re.fullmatch(r"\d{1,3}(?:\.\d{3})+(?:,\d+)?", token)):
+            return True
+    return False
 
 
 def clamp_quantity(value) -> int:

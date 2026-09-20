@@ -12,6 +12,7 @@ from .guardrails import (
     clamp_budget,
     clamp_party_size,
     clamp_quantity,
+    has_malformed_budget_literal,
 )
 from .models import Combo
 
@@ -61,6 +62,18 @@ intent_type rules:
   jokes, anything not about eating here).
 
 Other rules:
+- Never repair a malformed number by guessing: "1.2.3 USD", "12abc USD", and "abc USD"
+  are unusable budgets. Set budget_amount null, budget_stated false, budget_unparseable true.
+  Valid thousands grouping such as "254.000đ" and decimal amounts like "$2.50" are allowed.
+- Preserve a negative budget exactly in budget_amount (including its minus sign) and set
+  budget_stated true. Python will reject it and ask for a new budget; never turn it positive,
+  replace it with zero, or discard the amount. This also applies to a Unicode minus sign.
+- Keep food quantities separate from money: "-2 beers for $10" or "-2 chai bia với $10"
+  means budget_amount 10, budget_currency "USD", budget_stated true, budget_unparseable false,
+  and beer quantity -2. A negative item quantity is NOT a negative budget.
+- Vague money statements such as "I have some money", "tôi có một ít tiền", or "có chút tiền"
+  ARE attempts to state a budget: budget_amount null, budget_stated false,
+  budget_unparseable true. A plain food request with no money statement is different.
 - Map vague words sensibly: "a couple of beers" -> {{"role":"beer","quantity":2}}; "a few" -> 3; "some vegetables" -> {{"role":"vegetable","quantity":1}}; unspecified quantity -> 1.
 - Only use roles from the allowed list above. If intent_type is "order" but no specific category is
   named, return an empty "wants" list (a default will be filled in elsewhere) — do not force-fit roles.
@@ -169,6 +182,10 @@ def extract_intent(message: str) -> dict:
     intent.setdefault("budget_unparseable", False)
     intent.setdefault("wants", [])
     intent.setdefault("notes", "")
+    if has_malformed_budget_literal(message):
+        intent["budget_amount"] = None
+        intent["budget_stated"] = False
+        intent["budget_unparseable"] = True
     intent["party_size"] = clamp_party_size(intent.get("party_size", 1))
 
     cleaned_wants = []
@@ -186,6 +203,10 @@ def extract_intent(message: str) -> dict:
 
     currency = normalize_currency(intent.get("budget_currency"))
     raw_amount = intent.get("budget_amount")
+    try:
+        intent["budget_invalid"] = float(raw_amount) < 0
+    except (TypeError, ValueError):
+        intent["budget_invalid"] = False
     raw_budget_stated = bool(intent["budget_stated"]) and raw_amount is not None
 
     # The LLM only extracts the raw stated amount + currency code — Python does the actual

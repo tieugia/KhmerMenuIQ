@@ -132,12 +132,32 @@ def _selected_item_context(restaurants, selected_hit: dict, limit: int = 12) -> 
 def chat(req: ChatRequest):
     restaurants = load_restaurants()
     intent = extract_intent(req.message)
+    if intent.get("budget_invalid"):
+        return ChatResponse(
+            reply=(
+                "Ngân sách không hợp lệ: budget không được là số âm. "
+                "Vui lòng nhập lại ngân sách, ví dụ 10 USD hoặc 40.000 KHR. "
+                "Invalid budget: a budget cannot be negative. Please enter your budget again."
+            ),
+            combos=[],
+            intent=intent,
+        )
+    if intent.get("budget_unparseable"):
+        return ChatResponse(
+            reply=(
+                "Ngân sách không hợp lệ: mình chưa hiểu số tiền bạn nhập. "
+                "Vui lòng nhập lại ngân sách bằng số, ví dụ 10 USD hoặc 40.000 KHR. "
+                "Invalid budget amount. Please enter your budget again as a number."
+            ),
+            combos=[],
+            intent=intent,
+        )
     selected_hit = _resolve_selected_item(restaurants, req.selected_item)
 
     # "order" intent always has a non-empty wants list by this point (extract_intent fills in a
     # balanced default when the diner didn't name specific dishes), so this also covers vague,
     # non-English recommendation requests like "tôi đi 4 người, nên ăn món gì?".
-    if intent["wants"] and not selected_hit:
+    if intent["intent_type"] == "order" and intent["wants"] and not selected_hit:
         combos = build_combos(restaurants, intent["budget_usd"], intent["wants"], top_n=3)
         _add_currency_display(combos, intent)
         reply = compose_reply(req.message, intent, combos)
